@@ -1,0 +1,2108 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Steal an Egg 3D | Akshit Sinha</title>
+
+<style>
+*{
+    box-sizing:border-box;
+    margin:0;
+    padding:0;
+}
+
+body{
+    overflow:hidden;
+    font-family:Arial,sans-serif;
+    background:#07111f;
+    color:white;
+    user-select:none;
+}
+
+canvas{
+    display:block;
+}
+
+#hud{
+    position:fixed;
+    top:12px;
+    left:50%;
+    transform:translateX(-50%);
+    z-index:20;
+
+    width:min(1000px,94%);
+
+    display:flex;
+    justify-content:space-around;
+    align-items:center;
+
+    padding:12px;
+
+    border-radius:18px;
+
+    background:rgba(5,10,25,.82);
+    border:1px solid rgba(255,255,255,.18);
+
+    backdrop-filter:blur(12px);
+}
+
+.stat{
+    font-weight:bold;
+    font-size:15px;
+}
+
+.money{color:#ffd43b}
+.speed{color:#38bdf8}
+.egg{color:#f9a8d4}
+.player{color:#4ade80}
+
+#message{
+    position:fixed;
+    top:82px;
+    left:50%;
+    transform:translateX(-50%);
+
+    z-index:40;
+
+    background:rgba(0,0,0,.85);
+
+    padding:13px 24px;
+
+    border-radius:15px;
+
+    font-weight:bold;
+
+    opacity:0;
+
+    transition:.25s;
+
+    pointer-events:none;
+}
+
+#message.show{
+    opacity:1;
+}
+
+.screen{
+    position:fixed;
+    inset:0;
+
+    z-index:100;
+
+    display:flex;
+    justify-content:center;
+    align-items:center;
+
+    text-align:center;
+
+    background:
+        radial-gradient(
+            circle,
+            rgba(99,102,241,.28),
+            rgba(0,0,0,.95)
+        );
+
+    padding:20px;
+}
+
+.panel{
+    max-width:800px;
+}
+
+h1{
+    font-size:clamp(42px,8vw,82px);
+    line-height:.95;
+
+    margin-bottom:18px;
+
+    background:
+        linear-gradient(
+            90deg,
+            #facc15,
+            #fb7185,
+            #a855f7,
+            #38bdf8
+        );
+
+    -webkit-background-clip:text;
+    color:transparent;
+}
+
+.subtitle{
+    color:#cbd5e1;
+    font-size:18px;
+    line-height:1.6;
+    margin-bottom:25px;
+}
+
+button{
+    border:0;
+    border-radius:14px;
+
+    padding:14px 28px;
+
+    font-weight:bold;
+    font-size:16px;
+
+    cursor:pointer;
+
+    background:
+        linear-gradient(
+            135deg,
+            #facc15,
+            #f97316
+        );
+
+    color:#111827;
+
+    box-shadow:
+        0 10px 30px
+        rgba(249,115,22,.3);
+}
+
+button:hover{
+    transform:scale(1.04);
+}
+
+.info{
+    margin-top:25px;
+    color:#94a3b8;
+    line-height:1.8;
+}
+
+#adminPanel{
+    display:none;
+
+    position:fixed;
+
+    right:15px;
+    top:85px;
+
+    z-index:60;
+
+    width:260px;
+
+    padding:18px;
+
+    border-radius:18px;
+
+    background:rgba(7,12,30,.94);
+
+    border:1px solid #facc15;
+
+    box-shadow:0 0 30px rgba(250,204,21,.2);
+}
+
+#adminPanel h2{
+    color:#facc15;
+    margin-bottom:12px;
+}
+
+.adminBtn{
+    width:100%;
+    margin:5px 0;
+
+    padding:9px;
+
+    background:#1e293b;
+    color:white;
+
+    box-shadow:none;
+
+    border:1px solid #334155;
+}
+
+#biomeInfo{
+    position:fixed;
+    bottom:15px;
+    left:50%;
+
+    transform:translateX(-50%);
+
+    z-index:25;
+
+    padding:10px 20px;
+
+    border-radius:15px;
+
+    background:rgba(0,0,0,.7);
+
+    color:#e2e8f0;
+
+    font-size:14px;
+}
+
+#mobile{
+    display:none;
+
+    position:fixed;
+    bottom:20px;
+    left:20px;
+
+    z-index:50;
+}
+
+.mrow{
+    display:flex;
+    justify-content:center;
+}
+
+.mbtn{
+    width:58px;
+    height:58px;
+
+    margin:3px;
+
+    padding:0;
+
+    border-radius:15px;
+
+    background:rgba(15,23,42,.8);
+
+    color:white;
+
+    border:1px solid #475569;
+
+    box-shadow:none;
+
+    touch-action:none;
+}
+
+@media(max-width:700px){
+
+    #mobile{
+        display:block;
+    }
+
+    #hud{
+        padding:8px;
+    }
+
+    .stat{
+        font-size:10px;
+    }
+
+    #adminPanel{
+        width:220px;
+        right:8px;
+    }
+}
+</style>
+</head>
+
+<body>
+
+<div id="hud">
+
+    <div class="stat money">
+        💰 $<span id="money">0</span>
+    </div>
+
+    <div class="stat speed">
+        ⚡ <span id="speed">7</span>
+    </div>
+
+    <div class="stat egg">
+        🥚 <span id="egg">None</span>
+    </div>
+
+    <div class="stat player">
+        👥 <span id="players">1/4</span>
+    </div>
+
+</div>
+
+<div id="message"></div>
+
+<div id="biomeInfo">
+    📍 Home Base
+</div>
+
+
+<!-- START -->
+
+<div class="screen" id="start">
+
+    <div class="panel">
+
+        <h1>
+            STEAL<br>
+            AN EGG
+        </h1>
+
+        <div class="subtitle">
+
+            Travel through 10 mysterious biomes,
+            steal powerful eggs and bring them back
+            to your base!
+
+        </div>
+
+        <button onclick="startGame()">
+            🚀 PLAY
+        </button>
+
+        <div class="info">
+
+            💻 WASD / Arrow Keys — Move<br>
+            📱 Touch controls — Mobile<br>
+            🥚 Walk into an egg to steal it<br>
+            🏠 Bring the egg back to your base<br>
+            ⚡ Upgrade your speed<br>
+            🌈 Collect different trails
+
+            <br><br>
+
+            <strong>
+                Made by Akshit Sinha
+            </strong>
+
+        </div>
+
+    </div>
+
+</div>
+
+
+<!-- GAME OVER -->
+
+<div
+    class="screen"
+    id="end"
+    style="display:none"
+>
+
+    <div class="panel">
+
+        <h1>
+            GREAT JOB!
+        </h1>
+
+        <div class="subtitle">
+
+            Eggs delivered:
+            <strong id="finalEggs">0</strong>
+
+            <br>
+
+            Money earned:
+            <strong id="finalMoney">0</strong>
+
+        </div>
+
+        <button onclick="location.reload()">
+            🔄 PLAY AGAIN
+        </button>
+
+        <div class="info">
+            Made by Akshit Sinha
+        </div>
+
+    </div>
+
+</div>
+
+
+<!-- ADMIN -->
+
+<div id="adminPanel">
+
+    <h2>👑 AKSHIT ADMIN</h2>
+
+    <button
+        class="adminBtn"
+        onclick="adminSpeed()">
+        ⚡ Super Speed
+    </button>
+
+    <button
+        class="adminBtn"
+        onclick="adminMoney()">
+        💰 +10,000 Money
+    </button>
+
+    <button
+        class="adminBtn"
+        onclick="adminEgg()">
+        🥚 Give Infinity Egg
+    </button>
+
+    <button
+        class="adminBtn"
+        onclick="adminHeal()">
+        ❤️ Heal
+    </button>
+
+    <button
+        class="adminBtn"
+        onclick="rainbowTrail()">
+        🌈 Rainbow Trail
+    </button>
+
+    <button
+        class="adminBtn"
+        onclick="spawnEgg()">
+        🥚 Spawn Egg
+    </button>
+
+</div>
+
+
+<!-- MOBILE -->
+
+<div id="mobile">
+
+    <div class="mrow">
+
+        <button
+            class="mbtn"
+            onpointerdown="press('w')"
+            onpointerup="release('w')">
+            ⬆️
+        </button>
+
+    </div>
+
+    <div class="mrow">
+
+        <button
+            class="mbtn"
+            onpointerdown="press('a')"
+            onpointerup="release('a')">
+            ⬅️
+        </button>
+
+        <button
+            class="mbtn"
+            onpointerdown="press('s')"
+            onpointerup="release('s')">
+            ⬇️
+        </button>
+
+        <button
+            class="mbtn"
+            onpointerdown="press('d')"
+            onpointerup="release('d')">
+            ➡️
+        </button>
+
+    </div>
+
+</div>
+
+
+<script src="https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.min.js"></script>
+
+<script>
+
+/* =====================================
+   GAME VARIABLES
+===================================== */
+
+let scene;
+let camera;
+let renderer;
+
+let player;
+
+let eggs = [];
+let npcs = [];
+let trails = [];
+
+let running = false;
+
+let money = 0;
+let eggCount = 0;
+
+let speed = 7;
+
+let carryingEgg = null;
+
+let keys = {};
+
+let currentBiome = "Home Base";
+
+let lastTime = performance.now();
+
+
+/* =====================================
+   RARITIES
+===================================== */
+
+const rarities = [
+
+    {
+        name:"Common",
+        chance:50,
+        value:10,
+        color:0xffffff
+    },
+
+    {
+        name:"Uncommon",
+        chance:25,
+        value:25,
+        color:0x22c55e
+    },
+
+    {
+        name:"Rare",
+        chance:13,
+        value:50,
+        color:0x38bdf8
+    },
+
+    {
+        name:"Epic",
+        chance:7,
+        value:100,
+        color:0xa855f7
+    },
+
+    {
+        name:"Mythic",
+        chance:3.5,
+        value:250,
+        color:0xef4444
+    },
+
+    {
+        name:"Secret",
+        chance:1,
+        value:750,
+        color:0x111111
+    },
+
+    {
+        name:"Devine",
+        chance:.45,
+        value:2500,
+        color:0xffd700
+    },
+
+    {
+        name:"Infinity",
+        chance:.05,
+        value:10000,
+        color:0xff00ff
+    }
+
+];
+
+
+/* =====================================
+   10 BIOMES
+===================================== */
+
+const biomes = [
+
+    {
+        name:"Forest",
+        color:0x228b22,
+        x:-60,
+        z:-60
+    },
+
+    {
+        name:"Desert",
+        color:0xd9a441,
+        x:0,
+        z:-60
+    },
+
+    {
+        name:"Ice",
+        color:0x67e8f9,
+        x:60,
+        z:-60
+    },
+
+    {
+        name:"Volcano",
+        color:0xdc2626,
+        x:-60,
+        z:0
+    },
+
+    {
+        name:"Ocean",
+        color:0x0284c7,
+        x:60,
+        z:0
+    },
+
+    {
+        name:"Mushroom",
+        color:0xa855f7,
+        x:-60,
+        z:60
+    },
+
+    {
+        name:"Space",
+        color:0x312e81,
+        x:0,
+        z:60
+    },
+
+    {
+        name:"Castle",
+        color:0x64748b,
+        x:60,
+        z:60
+    },
+
+    {
+        name:"Sky",
+        color:0x93c5fd,
+        x:-110,
+        z:0
+    },
+
+    {
+        name:"Infinity",
+        color:0xec4899,
+        x:110,
+        z:0
+    }
+
+];
+
+
+/* =====================================
+   SCENE
+===================================== */
+
+function init(){
+
+    scene =
+        new THREE.Scene();
+
+    scene.background =
+        new THREE.Color(
+            0x87ceeb
+        );
+
+    scene.fog =
+        new THREE.Fog(
+            0x87ceeb,
+            70,
+            220
+        );
+
+
+    camera =
+        new THREE.PerspectiveCamera(
+            65,
+            innerWidth/innerHeight,
+            .1,
+            500
+        );
+
+
+    renderer =
+        new THREE.WebGLRenderer({
+            antialias:true
+        });
+
+    renderer.setSize(
+        innerWidth,
+        innerHeight
+    );
+
+    renderer.setPixelRatio(
+        Math.min(
+            devicePixelRatio,
+            2
+        )
+    );
+
+    renderer.shadowMap.enabled =
+        true;
+
+    document.body.appendChild(
+        renderer.domElement
+    );
+
+
+    /* LIGHT */
+
+    const light =
+        new THREE.HemisphereLight(
+            0xffffff,
+            0x334155,
+            2
+        );
+
+    scene.add(light);
+
+
+    const sun =
+        new THREE.DirectionalLight(
+            0xffffff,
+            2
+        );
+
+    sun.position.set(
+        30,
+        50,
+        20
+    );
+
+    sun.castShadow = true;
+
+    scene.add(sun);
+
+
+    createWorld();
+
+    createPlayer();
+
+    createBiomes();
+
+    createEggs();
+
+    createNPCs();
+
+
+    animate(
+        performance.now()
+    );
+}
+
+
+/* =====================================
+   WORLD
+===================================== */
+
+function createWorld(){
+
+    const ground =
+        new THREE.Mesh(
+
+            new THREE.PlaneGeometry(
+                300,
+                300
+            ),
+
+            new THREE.MeshStandardMaterial({
+                color:0x334155
+            })
+
+        );
+
+    ground.rotation.x =
+        -Math.PI/2;
+
+    ground.receiveShadow =
+        true;
+
+    scene.add(ground);
+
+
+    /* HOME BASE */
+
+    const base =
+        new THREE.Mesh(
+
+            new THREE.BoxGeometry(
+                25,
+                1,
+                25
+            ),
+
+            new THREE.MeshStandardMaterial({
+                color:0x22c55e
+            })
+
+        );
+
+    base.position.set(
+        0,
+        .5,
+        0
+    );
+
+    scene.add(base);
+
+
+    /* BASE BUILDING */
+
+    const building =
+        new THREE.Mesh(
+
+            new THREE.BoxGeometry(
+                12,
+                5,
+                8
+            ),
+
+            new THREE.MeshStandardMaterial({
+                color:0x2563eb
+            })
+
+        );
+
+    building.position.set(
+        0,
+        3,
+        5
+    );
+
+    scene.add(building);
+
+
+    /* BASE SIGN */
+
+    addTextSign(
+        "YOUR BASE",
+        0,
+        7,
+        5
+    );
+}
+
+
+/* =====================================
+   TEXT SIGN
+===================================== */
+
+function addTextSign(
+    text,
+    x,
+    y,
+    z
+){
+
+    const canvas =
+        document.createElement(
+            "canvas"
+        );
+
+    canvas.width = 512;
+    canvas.height = 128;
+
+    const ctx =
+        canvas.getContext(
+            "2d"
+        );
+
+    ctx.fillStyle =
+        "#ffffff";
+
+    ctx.font =
+        "bold 55px Arial";
+
+    ctx.textAlign =
+        "center";
+
+    ctx.fillText(
+        text,
+        256,
+        75
+    );
+
+
+    const texture =
+        new THREE.CanvasTexture(
+            canvas
+        );
+
+
+    const material =
+        new THREE.SpriteMaterial({
+            map:texture
+        });
+
+
+    const sprite =
+        new THREE.Sprite(
+            material
+        );
+
+
+    sprite.position.set(
+        x,
+        y,
+        z
+    );
+
+
+    sprite.scale.set(
+        10,
+        2.5,
+        1
+    );
+
+
+    scene.add(sprite);
+}
+
+
+/* =====================================
+   BIOMES
+===================================== */
+
+function createBiomes(){
+
+    biomes.forEach(
+        biome => {
+
+            const island =
+                new THREE.Mesh(
+
+                    new THREE.CylinderGeometry(
+                        17,
+                        20,
+                        1.5,
+                        32
+                    ),
+
+                    new THREE.MeshStandardMaterial({
+                        color:biome.color
+                    })
+
+                );
+
+
+            island.position.set(
+                biome.x,
+                .4,
+                biome.z
+            );
+
+
+            scene.add(island);
+
+
+            addTextSign(
+                biome.name,
+                biome.x,
+                8,
+                biome.z
+            );
+
+
+            /* Decorations */
+
+            for(
+                let i=0;
+                i<7;
+                i++
+            ){
+
+                const rock =
+                    new THREE.Mesh(
+
+                        new THREE.DodecahedronGeometry(
+                            1+
+                            Math.random()*1.2
+                        ),
+
+                        new THREE.MeshStandardMaterial({
+                            color:biome.color
+                        })
+
+                    );
+
+
+                rock.position.set(
+
+                    biome.x+
+                    Math.random()*25-12.5,
+
+                    1,
+
+                    biome.z+
+                    Math.random()*25-12.5
+
+                );
+
+
+                scene.add(rock);
+
+            }
+
+        }
+    );
+}
+
+
+/* =====================================
+   PLAYER
+===================================== */
+
+function createPlayer(){
+
+    player =
+        new THREE.Group();
+
+
+    const body =
+        new THREE.Mesh(
+
+            new THREE.BoxGeometry(
+                1.3,
+                1.8,
+                1
+            ),
+
+            new THREE.MeshStandardMaterial({
+                color:0x3b82f6
+            })
+
+        );
+
+    body.position.y =
+        1.2;
+
+    body.castShadow = true;
+
+    player.add(body);
+
+
+    const head =
+        new THREE.Mesh(
+
+            new THREE.BoxGeometry(
+                1.25,
+                1.25,
+                1.25
+            ),
+
+            new THREE.MeshStandardMaterial({
+                color:0xffc9a5
+            })
+
+        );
+
+    head.position.y =
+        2.7;
+
+    player.add(head);
+
+
+    scene.add(player);
+}
+
+
+/* =====================================
+   EGG RARITY
+===================================== */
+
+function randomRarity(){
+
+    const r =
+        Math.random()*100;
+
+    let total = 0;
+
+    for(
+        const rarity of rarities
+    ){
+
+        total +=
+            rarity.chance;
+
+        if(
+            r <= total
+        )
+            return rarity;
+
+    }
+
+    return rarities[0];
+}
+
+
+/* =====================================
+   CREATE EGG
+===================================== */
+
+function createEgg(){
+
+    const biome =
+        biomes[
+            Math.floor(
+                Math.random()*
+                biomes.length
+            )
+        ];
+
+
+    const rarity =
+        randomRarity();
+
+
+    const egg =
+        new THREE.Mesh(
+
+            new THREE.SphereGeometry(
+                .8,
+                20,
+                20
+            ),
+
+            new THREE.MeshStandardMaterial({
+
+                color:
+                    rarity.color,
+
+                emissive:
+                    rarity.color,
+
+                emissiveIntensity:
+                    rarity.name==="Infinity"
+                    ? 1
+                    : .15
+
+            })
+
+        );
+
+
+    egg.scale.y = 1.25;
+
+
+    egg.position.set(
+
+        biome.x+
+        Math.random()*20-10,
+
+        1.2,
+
+        biome.z+
+        Math.random()*20-10
+
+    );
+
+
+    egg.userData.rarity =
+        rarity;
+
+    egg.userData.biome =
+        biome.name;
+
+    egg.userData.bob =
+        Math.random()*6;
+
+
+    scene.add(egg);
+
+    eggs.push(egg);
+}
+
+
+/* =====================================
+   EGG SPAWNS
+===================================== */
+
+function createEggs(){
+
+    for(
+        let i=0;
+        i<30;
+        i++
+    ){
+
+        createEgg();
+
+    }
+}
+
+
+/* =====================================
+   NPC
+===================================== */
+
+function createNPCs(){
+
+    for(
+        let i=0;
+        i<3;
+        i++
+    ){
+
+        const npc =
+            new THREE.Mesh(
+
+                new THREE.SphereGeometry(
+                    1.2,
+                    16,
+                    16
+                ),
+
+                new THREE.MeshStandardMaterial({
+                    color:0xef4444
+                })
+
+            );
+
+
+        npc.position.set(
+            Math.random()*20-10,
+            1.2,
+            Math.random()*20-10
+        );
+
+
+        npc.userData.speed =
+            1+
+            Math.random()*1.2;
+
+
+        scene.add(npc);
+
+        npcs.push(npc);
+
+    }
+}
+
+
+/* =====================================
+   MOVEMENT
+===================================== */
+
+document.addEventListener(
+    "keydown",
+    e=>{
+        keys[
+            e.key.toLowerCase()
+        ]=true;
+
+        /* Admin hotkey */
+
+        if(
+            e.key.toLowerCase()==="p"
+        ){
+
+            document.getElementById(
+                "adminPanel"
+            ).style.display =
+                document.getElementById(
+                    "adminPanel"
+                ).style.display==="block"
+                ? "none"
+                : "block";
+
+        }
+    }
+);
+
+
+document.addEventListener(
+    "keyup",
+    e=>{
+        keys[
+            e.key.toLowerCase()
+        ]=false;
+    }
+);
+
+
+function press(k){
+    keys[k]=true;
+}
+
+
+function release(k){
+    keys[k]=false;
+}
+
+
+/* =====================================
+   UPDATE PLAYER
+===================================== */
+
+function updatePlayer(delta){
+
+    let dx=0;
+    let dz=0;
+
+
+    if(
+        keys.w ||
+        keys.arrowup
+    )
+        dz--;
+
+    if(
+        keys.s ||
+        keys.arrowdown
+    )
+        dz++;
+
+    if(
+        keys.a ||
+        keys.arrowleft
+    )
+        dx--;
+
+    if(
+        keys.d ||
+        keys.arrowright
+    )
+        dx++;
+
+
+    if(
+        dx!==0 ||
+        dz!==0
+    ){
+
+        const len =
+            Math.sqrt(
+                dx*dx+
+                dz*dz
+            );
+
+
+        dx/=len;
+        dz/=len;
+
+
+        player.position.x +=
+            dx*
+            speed*
+            delta;
+
+
+        player.position.z +=
+            dz*
+            speed*
+            delta;
+
+
+        player.rotation.y =
+            Math.atan2(
+                dx,
+                dz
+            );
+
+    }
+
+
+    player.position.x =
+        Math.max(
+            -135,
+            Math.min(
+                135,
+                player.position.x
+            )
+        );
+
+
+    player.position.z =
+        Math.max(
+            -90,
+            Math.min(
+                90,
+                player.position.z
+            )
+        );
+
+}
+
+
+/* =====================================
+   EGG PICKUP
+===================================== */
+
+function checkEggs(){
+
+    if(carryingEgg)
+        return;
+
+
+    for(
+        let i=eggs.length-1;
+        i>=0;
+        i--
+    ){
+
+        const egg =
+            eggs[i];
+
+
+        const dist =
+            player.position.distanceTo(
+                egg.position
+            );
+
+
+        if(
+            dist<2
+        ){
+
+            carryingEgg =
+                egg;
+
+
+            eggs.splice(
+                i,
+                1
+            );
+
+
+            scene.remove(
+                egg
+            );
+
+
+            document.getElementById(
+                "egg"
+            ).innerText =
+                egg.userData.rarity.name;
+
+
+            showMessage(
+
+                "🥚 You stole a "+
+                egg.userData.rarity.name+
+                " Egg!"
+
+            );
+
+
+            break;
+
+        }
+
+    }
+
+}
+
+
+/* =====================================
+   RETURN EGG TO BASE
+===================================== */
+
+function deliverEgg(){
+
+    if(!carryingEgg)
+        return;
+
+
+    const distance =
+        player.position.distanceTo(
+            new THREE.Vector3(
+                0,
+                0,
+                0
+            )
+        );
+
+
+    if(
+        distance<10
+    ){
+
+        const rarity =
+            carryingEgg.userData.rarity;
+
+
+        money +=
+            rarity.value;
+
+
+        eggCount++;
+
+
+        showMessage(
+
+            "🏠 Egg delivered! +$"+
+            rarity.value
+
+        );
+
+
+        carryingEgg =
+            null;
+
+
+        document.getElementById(
+            "egg"
+        ).innerText =
+            "None";
+
+
+        createEgg();
+
+
+        updateHUD();
+
+    }
+
+}
+
+
+/* =====================================
+   NPC
+===================================== */
+
+function updateNPCs(delta){
+
+    npcs.forEach(
+        npc=>{
+
+            const direction =
+                new THREE.Vector3()
+                .subVectors(
+                    player.position,
+                    npc.position
+                );
+
+
+            if(
+                direction.length()>3
+            ){
+
+                direction.normalize();
+
+
+                npc.position.x +=
+                    direction.x*
+                    npc.userData.speed*
+                    delta;
+
+
+                npc.position.z +=
+                    direction.z*
+                    npc.userData.speed*
+                    delta;
+
+            }
+
+
+            if(
+                player.position.distanceTo(
+                    npc.position
+                )<2
+            ){
+
+                if(carryingEgg){
+
+                    const stolen =
+                        carryingEgg;
+
+                    carryingEgg =
+                        null;
+
+
+                    document.getElementById(
+                        "egg"
+                    ).innerText =
+                        "None";
+
+
+                    showMessage(
+                        "😈 A thief stole your egg!"
+                    );
+
+
+                    setTimeout(
+                        ()=>{
+                            createEgg();
+                        },
+                        500
+                    );
+
+                }
+
+            }
+
+        }
+    );
+}
+
+
+/* =====================================
+   BIOME DETECTION
+===================================== */
+
+function detectBiome(){
+
+    let closest =
+        "Home Base";
+
+    let distance =
+        15;
+
+
+    biomes.forEach(
+        biome=>{
+
+            const d =
+                Math.sqrt(
+
+                    Math.pow(
+                        player.position.x-
+                        biome.x,
+                        2
+                    )+
+
+                    Math.pow(
+                        player.position.z-
+                        biome.z,
+                        2
+                    )
+
+                );
+
+
+            if(
+                d<distance
+            ){
+
+                distance=d;
+
+                closest=
+                    biome.name;
+
+            }
+
+        }
+    );
+
+
+    currentBiome =
+        closest;
+
+
+    document.getElementById(
+        "biomeInfo"
+    ).innerText =
+        "📍 "+
+        currentBiome+
+        " Biome";
+
+}
+
+
+/* =====================================
+   TRAIL
+===================================== */
+
+function createTrail(){
+
+    if(
+        Math.random()>.2
+    )
+        return;
+
+
+    const color =
+        Math.random()*
+        0xffffff;
+
+
+    const particle =
+        new THREE.Mesh(
+
+            new THREE.SphereGeometry(
+                .08,
+                8,
+                8
+            ),
+
+            new THREE.MeshBasicMaterial({
+                color:color
+            })
+
+        );
+
+
+    particle.position.copy(
+        player.position
+    );
+
+
+    particle.position.y+=.4;
+
+
+    scene.add(
+        particle
+    );
+
+
+    trails.push({
+        mesh:particle,
+        life:1
+    });
+
+}
+
+
+/* =====================================
+   UPDATE TRAILS
+===================================== */
+
+function updateTrails(delta){
+
+    for(
+        let i=trails.length-1;
+        i>=0;
+        i--
+    ){
+
+        const t =
+            trails[i];
+
+
+        t.life -=
+            delta;
+
+
+        t.mesh.scale.multiplyScalar(
+            .97
+        );
+
+
+        if(
+            t.life<=0
+        ){
+
+            scene.remove(
+                t.mesh
+            );
+
+            trails.splice(
+                i,
+                1
+            );
+
+        }
+
+    }
+
+}
+
+
+/* =====================================
+   ADMIN
+===================================== */
+
+function adminSpeed(){
+
+    speed=25;
+
+    showMessage(
+        "👑 ADMIN: Super Speed!"
+    );
+
+    updateHUD();
+}
+
+
+function adminMoney(){
+
+    money+=10000;
+
+    showMessage(
+        "👑 ADMIN: +$10,000!"
+    );
+
+    updateHUD();
+}
+
+
+function adminEgg(){
+
+    if(carryingEgg)
+        return;
+
+
+    carryingEgg={
+        userData:{
+            rarity:{
+                name:"Infinity",
+                value:10000
+            }
+        }
+    };
+
+
+    document.getElementById(
+        "egg"
+    ).innerText =
+        "Infinity";
+
+
+    showMessage(
+        "♾️ ADMIN: Infinity Egg!"
+    );
+
+}
+
+
+function adminHeal(){
+
+    showMessage(
+        "❤️ ADMIN: Fully healed!"
+    );
+
+}
+
+
+function rainbowTrail(){
+
+    showMessage(
+        "🌈 ADMIN: Rainbow Trail ON!"
+    );
+
+    speed=18;
+
+    updateHUD();
+}
+
+
+function spawnEgg(){
+
+    createEgg();
+
+    showMessage(
+        "🥚 ADMIN: Egg spawned!"
+    );
+
+}
+
+
+/* =====================================
+   HUD
+===================================== */
+
+function updateHUD(){
+
+    document.getElementById(
+        "money"
+    ).innerText =
+        money;
+
+
+    document.getElementById(
+        "speed"
+    ).innerText =
+        speed;
+
+}
+
+
+/* =====================================
+   MESSAGE
+===================================== */
+
+function showMessage(text){
+
+    const m =
+        document.getElementById(
+            "message"
+        );
+
+
+    m.innerText =
+        text;
+
+
+    m.classList.add(
+        "show"
+    );
+
+
+    setTimeout(
+        ()=>{
+            m.classList.remove(
+                "show"
+            );
+        },
+        1800
+    );
+
+}
+
+
+/* =====================================
+   START
+===================================== */
+
+function startGame(){
+
+    document.getElementById(
+        "start"
+    ).style.display =
+        "none";
+
+
+    running=true;
+
+
+    showMessage(
+        "🥚 Find an egg and bring it home!"
+    );
+
+}
+
+
+/* =====================================
+   CAMERA
+===================================== */
+
+function updateCamera(){
+
+    const target =
+        new THREE.Vector3(
+
+            player.position.x,
+
+            player.position.y+11,
+
+            player.position.z+15
+
+        );
+
+
+    camera.position.lerp(
+        target,
+        .08
+    );
+
+
+    camera.lookAt(
+
+        player.position.x,
+
+        player.position.y+1,
+
+        player.position.z
+
+    );
+
+}
+
+
+/* =====================================
+   ANIMATE EGGS
+===================================== */
+
+function animateEggs(time){
+
+    eggs.forEach(
+        egg=>{
+
+            egg.rotation.y +=
+                .015;
+
+
+            egg.position.y =
+                1.2+
+                Math.sin(
+                    time*.003+
+                    egg.userData.bob
+                )*.15;
+
+
+            if(
+                egg.userData.rarity.name===
+                "Infinity"
+            ){
+
+                egg.material.emissiveIntensity =
+                    1+
+                    Math.sin(
+                        time*.01
+                    )*.5;
+
+            }
+
+        }
+    );
+
+}
+
+
+/* =====================================
+   GAME LOOP
+===================================== */
+
+function animate(now){
+
+    requestAnimationFrame(
+        animate
+    );
+
+
+    const delta =
+        Math.min(
+            (now-lastTime)/1000,
+            .05
+        );
+
+
+    lastTime=now;
+
+
+    if(running){
+
+        updatePlayer(delta);
+
+        checkEggs();
+
+        deliverEgg();
+
+        updateNPCs(delta);
+
+        detectBiome();
+
+        createTrail();
+
+        updateTrails(delta);
+
+        updateCamera();
+
+    }
+
+
+    animateEggs(now);
+
+
+    renderer.render(
+        scene,
+        camera
+    );
+
+}
+
+
+/* =====================================
+   RESIZE
+===================================== */
+
+window.addEventListener(
+    "resize",
+    ()=>{
+
+        camera.aspect =
+            innerWidth/
+            innerHeight;
+
+        camera.updateProjectionMatrix();
+
+        renderer.setSize(
+            innerWidth,
+            innerHeight
+        );
+
+    }
+);
+
+
+/* =====================================
+   INIT
+===================================== */
+
+init();
+
+</script>
+
+</body>
+</html>
